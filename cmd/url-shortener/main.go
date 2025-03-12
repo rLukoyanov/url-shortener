@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"example.com/url-shorterner/internal/config"
+	"example.com/url-shorterner/internal/lib/logger/sl"
+	"example.com/url-shorterner/internal/storage/sqlite"
 )
 
 func main() {
@@ -15,7 +17,14 @@ func main() {
 
 	log := setupLogger(cfg.Env)
 	log.Info("test logger", slog.String("env", cfg.Env))
+	log.Debug("test logger", slog.String("env", cfg.Env))
 	// init storage - sqlite
+	storage, err := sqlite.New(cfg.StoragePath)
+	if err != nil {
+		log.Error("failed to init", sl.Err(err))
+		os.Exit(1)
+	}
+	_ = storage
 	// init router - chi
 	// run server
 }
