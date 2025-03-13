@@ -7,6 +7,8 @@ import (
 	"example.com/url-shorterner/internal/config"
 	"example.com/url-shorterner/internal/lib/logger/sl"
 	"example.com/url-shorterner/internal/storage/sqlite"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
@@ -14,7 +16,6 @@ func main() {
 	cfg := config.MustLoad()
 
 	// init logger - slog
-
 	log := setupLogger(cfg.Env)
 	log.Info("test logger", slog.String("env", cfg.Env))
 	log.Debug("test logger", slog.String("env", cfg.Env))
@@ -25,7 +26,14 @@ func main() {
 		os.Exit(1)
 	}
 	_ = storage
+
 	// init router - chi
+	router := chi.NewRouter()
+	// middleware
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.URLFormat)
 	// run server
 }
 
