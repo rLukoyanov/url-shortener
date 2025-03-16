@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"example.com/url-shorterner/internal/config"
+	"example.com/url-shorterner/internal/http-server/handlers/url/redirect"
 	"example.com/url-shorterner/internal/http-server/handlers/url/save"
 	"example.com/url-shorterner/internal/lib/logger/sl"
 	"example.com/url-shorterner/internal/storage/sqlite"
@@ -19,8 +20,6 @@ func main() {
 
 	// init logger - slog
 	log := setupLogger(cfg.Env)
-	log.Info("test logger", slog.String("env", cfg.Env))
-	log.Debug("test logger", slog.String("env", cfg.Env))
 	// init storage - sqlite
 	storage, err := sqlite.New(cfg.StoragePath)
 	if err != nil {
@@ -38,14 +37,20 @@ func main() {
 	router.Use(middleware.URLFormat)
 
 	router.Post("/url", save.New(log, storage))
+	router.Get("/{alias}", redirect.New(log, storage))
 	// run server
 
+	log.Info("starting server", slog.String("address", cfg.HTTPServer.Address))
 	srv := &http.Server{
 		Addr:         cfg.HTTPServer.Address,
 		Handler:      router,
 		ReadTimeout:  cfg.HTTPServer.Timeout,
 		WriteTimeout: cfg.HTTPServer.Timeout,
 		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
+	}
+
+	if err := srv.ListenAndServe(); err != nil {
+		log.Error("failed to start server")
 	}
 }
 
