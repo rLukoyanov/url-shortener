@@ -2,9 +2,11 @@ package main
 
 import (
 	"log/slog"
+	"net/http"
 	"os"
 
 	"example.com/url-shorterner/internal/config"
+	"example.com/url-shorterner/internal/http-server/handlers/url/save"
 	"example.com/url-shorterner/internal/lib/logger/sl"
 	"example.com/url-shorterner/internal/storage/sqlite"
 	"github.com/go-chi/chi/v5"
@@ -34,7 +36,17 @@ func main() {
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
+
+	router.Post("/url", save.New(log, storage))
 	// run server
+
+	srv := &http.Server{
+		Addr:         cfg.HTTPServer.Address,
+		Handler:      router,
+		ReadTimeout:  cfg.HTTPServer.Timeout,
+		WriteTimeout: cfg.HTTPServer.Timeout,
+		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
+	}
 }
 
 const (
